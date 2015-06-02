@@ -29,6 +29,7 @@ module.exports = function create (opts) {
     if (!fs.existsSync(iconPath)) iconPath = path.join(__dirname, 'example', 'IconTemplate.png') // default cat icon
 
     var electronScreen = require('screen')
+    var workAreaSize = electronScreen.getPrimaryDisplay().workAreaSize
 
     menubar.tray = opts.tray || new Tray(iconPath)
 
@@ -36,8 +37,7 @@ module.exports = function create (opts) {
       if (menubar.window && menubar.window.isVisible()) return hideWindow()
       // bounds is only populated on os x
       if (bounds.x === 0 && bounds.y === 0) {
-        var size = electronScreen.getPrimaryDisplay().workAreaSize
-        bounds.x = size.width // default to top right
+        bounds.x = workAreaSize.width // default to top right
       }
       showWindow(bounds)
     })
@@ -70,8 +70,21 @@ module.exports = function create (opts) {
     }
 
     function showWindow (trayPos) {
-      var x = opts.x || trayPos.x - ((opts.width / 2) || 200) + (trayPos.width / 2)
-      var y = opts.y || trayPos.y
+
+      var windowBounds = menubar.window.getBounds()
+      var height = windowBounds.height || opts.height || 400
+      var width = windowBounds.width || opts.width || 400
+
+      var x = opts.x 
+        ? opts.x 
+        : trayPos.x - ((width / 2) || 200) + (trayPos.width)
+
+      var y = opts.y 
+        ? opts.y 
+        : (trayPos.y + trayPos.height > workAreaSize.height) 
+          ? trayPos.y - height
+          : trayPos.y + trayPos.height
+
       if (!menubar.window) {
         createWindow(true, x, y)
       }
